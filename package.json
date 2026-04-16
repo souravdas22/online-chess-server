@@ -1,0 +1,23 @@
+{
+  "name": "chess-backend",
+  "version": "1.0.0",
+  "description": "Real-time multiplayer chess backend",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "chess.js": "^1.0.0-beta.7",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.25.2",
+    "socket.io": "^4.7.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
