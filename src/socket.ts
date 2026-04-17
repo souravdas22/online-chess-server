@@ -1,14 +1,14 @@
 import { Server } from 'socket.io';
 import { gameManager } from './gameManager';
-import { MoveData } from './types';
+import { MoveData, TimeControl } from './types';
 
 export const setupSocketHandlers = (io: Server): void => {
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
 
     // Handle joining a room/game
-    socket.on('join_room', ({ gameId, reconnectToken }: { gameId: string; reconnectToken?: string }) => {
-      console.log(`Player ${socket.id} joining room ${gameId}`);
+    socket.on('join_room', ({ gameId, reconnectToken, timeControl }: { gameId: string; reconnectToken?: string; timeControl?: TimeControl }) => {
+      console.log(`Player ${socket.id} joining room ${gameId}`, timeControl ? `with time control ${timeControl.name}` : '');
 
       // Try to reconnect if token provided
       if (reconnectToken) {
@@ -23,7 +23,7 @@ export const setupSocketHandlers = (io: Server): void => {
       }
 
       // New player joining
-      const result = gameManager.addPlayerToGame(gameId, socket.id);
+      const result = gameManager.addPlayerToGame(gameId, socket.id, timeControl);
 
       if (!result) {
         socket.emit('room_full', { message: 'Game is full' });
@@ -32,6 +32,11 @@ export const setupSocketHandlers = (io: Server): void => {
 
       socket.join(gameId);
       const { color, game } = result;
+
+      // Set initial timestamp when both players are present and game starts
+      if (game.players.white && game.players.black && !game.lastMoveTimestamp) {
+        game.lastMoveTimestamp = Date.now();
+      }
 
       // Send role to the player
       socket.emit('assign_role', { color });
@@ -43,6 +48,29 @@ export const setupSocketHandlers = (io: Server): void => {
       socket.to(gameId).emit('player_joined', { color, socketId: socket.id });
 
       console.log(`Player ${socket.id} assigned ${color} in game ${gameId}`);
+    });
+
+    // Handle time update request
+    socket.on('get_time', ({ gameId }: { gameId: string }) => {
+      const timeData = gameManager.updateTime(gameId);
+      if (timeData) {
+        socket.emit('time_update', timeData);
+      }
+    });
+
+    // Handle timeout check
+    socket.on('check_timeout', ({ gameId }: { gameId: string }) => {
+      const timeoutResult = gameManager.checkTimeout(gameId);
+      if (timeoutResult && timeoutResult.isTimeout) {
+        const game = gameManager.getGame(gameId);
+        if (game) {
+          io.to(gameId).emit('game_over', {
+            reason: 'timeout',
+            winner: timeoutResult.winner,
+          });
+          io.to(gameId).emit('game_state', game);
+        }
+      }
     });
 
     // Handle move
