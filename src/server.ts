@@ -6,19 +6,7 @@ import { setupSocketHandlers } from './socket';
 
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '3001');
-const HOST = process.env.RENDER_EXTERNAL_HOSTNAME || '0.0.0.0';
-
-// Get allowed CORS origins
-const getCorsOrigins = (): string[] | boolean => {
-  const envOrigin = process.env.FRONTEND_URL;
-  if (envOrigin) {
-    return [envOrigin];
-  }
-  // Allow all origins in development
-  return process.env.NODE_ENV === 'production' ? [] : true;
-};
-
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 // Start server
 const start = async () => {
   const fastify = Fastify({
@@ -27,7 +15,7 @@ const start = async () => {
 
   // Enable CORS
   await fastify.register(fastifyCors, {
-    origin: getCorsOrigins(),
+    origin: true,
     credentials: true,
   });
 
@@ -40,7 +28,7 @@ const start = async () => {
   const server = fastify.server;
   const io = new Server(server, {
     cors: {
-      origin: getCorsOrigins(),
+      origin: true,
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -52,8 +40,8 @@ const start = async () => {
   setupSocketHandlers(io);
 
   try {
-    await fastify.listen({ port: PORT, host: HOST });
-    console.log(`🚀 Chess server running on port ${PORT}`);
+    await fastify.listen({ port: PORT, host: '0.0.0.0' });
+    console.log(`🚀 Chess server running on http://localhost:${PORT}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
