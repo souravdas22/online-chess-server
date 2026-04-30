@@ -26,6 +26,7 @@ class GameManager {
         white: [],
         black: [],
       },
+      inCheck: false,
     };
     this.games.set(gameId, game);
     return game;
@@ -159,6 +160,7 @@ class GameManager {
       game.turn = chess.turn();
       game.moveHistory.push(result.san);
       game.lastMoveTimestamp = now;
+      game.inCheck = chess.inCheck();
 
       // Track captured pieces
       if (targetPiece) {

@@ -32,6 +32,7 @@ export interface GameState {
     white: string[]; // pieces captured by white (black pieces)
     black: string[]; // pieces captured by black (white pieces)
   };
+  inCheck: boolean; // whether the side to move is in check
 }
 
 export interface MoveData {
